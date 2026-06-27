@@ -1,0 +1,36 @@
+# Pre-commit hooks: enforce formatting, linting, and type checks before each commit,
+# so the repo stays clean and CI doesn't fail on style. Install once with:
+#     pip install pre-commit && pre-commit install
+# Then hooks run automatically on `git commit` (or manually: pre-commit run --all-files).
+
+repos:
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black                 # opinionated code formatting
+        language_version: python3
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.8
+    hooks:
+      - id: ruff                  # fast linter (flake8 + isort + more)
+        args: [--fix]
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy                  # static type checking
+        args: [--ignore-missing-imports]
+        exclude: ^tests/
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        # The pipeline commits data/brand_health.db, which grows over time. Raise the
+        # limit (default 500KB) so routine data commits aren't blocked, while still
+        # catching genuinely huge accidental files.
+        args: [--maxkb=20000]

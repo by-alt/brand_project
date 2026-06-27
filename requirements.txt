@@ -1,0 +1,15 @@
+# Core pipeline
+praw>=7.7.0               # Reddit API client
+pandas>=2.0.0            # data manipulation (dashboard + analysis)
+vaderSentiment>=3.3.2   # sentiment scoring
+python-dotenv>=1.0.0    # loads credentials from .env
+google-play-scraper>=1.2.0  # app-store ratings (Phase 5)
+google-generativeai>=0.7.0  # OPTIONAL: LLM aspect-based sentiment (ABSA). Pipeline runs fine without it.
+
+# Dashboard (Phase 10)
+streamlit>=1.30.0
+matplotlib>=3.7.0
+
+# Note: SQLite needs no install — it's built into Python via the sqlite3 module.
+scikit-learn>=1.3.0  # OPTIONAL: topic clustering (scripts/topics.py)
+httpx>=0.24.0  # OPTIONAL: webhook alerts (scripts/alerts.py)

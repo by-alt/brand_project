@@ -1,0 +1,18 @@
+# Secrets — NEVER commit these
+.env
+
+# Collected data (can be large / regenerated)
+data/*.db
+data/*.csv
+data/*.json
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+venv/
+.venv/
+
+# OS / editor
+.DS_Store
+.vscode/

@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brand Health Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ====== DESIGN TOKENS — Organic Modernism (UNCHANGED) ====== */
+  :root{
+    --canvas:#F6F8F4; --surface:#FFFFFF; --ink:#10241C; --muted:#465A50; --subtle:#5C6F65;
+    --line:#E3E9E0; --line-soft:#EEF2EC; --hi:#13332A; --hi-2:#1C4A3C; --leaf:#2F8F66; --leaf-soft:#E8F4EE;
+    --pos:#15803D; --neg:#DC2626; --warn:#B45309; --pos-soft:#ECFDF3; --neg-soft:#FEF2F2;
+    --shadow:0 1px 3px 0 rgba(16,36,28,.05), 0 4px 8px -2px rgba(16,36,28,.04);
+    --shadow-lg:0 8px 24px -8px rgba(16,36,28,.18); --ease:cubic-bezier(0.4,0,0.2,1);
+    --swiggy:#F97316; --zomato:#E11D48; --blinkit:#CA8A04; --zepto:#7C3AED;
+    --amazon:#F59E0B; --flipkart:#2874F0; --meesho:#EC4899;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--canvas);color:var(--ink);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .num{font-variant-numeric:tabular-nums}
+  button{font-family:inherit}
+  .botanical{position:absolute;pointer-events:none;opacity:.06;color:var(--hi)}
+  header{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);overflow:hidden}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:13px 40px;width:100%;position:relative;z-index:2}
+  .topbar .botanical{top:-26px;right:120px;width:160px;height:120px;opacity:.05}
+  .brandmark{display:flex;align-items:center;gap:13px}
+  .logo{width:38px;height:38px;border-radius:11px;background:linear-gradient(150deg,var(--hi),var(--hi-2));display:grid;place-items:center;box-shadow:0 4px 12px -3px rgba(19,51,42,.5)}
+  .logo svg{width:23px;height:23px}
+  .brandmark b{font-weight:800;font-size:16px;letter-spacing:-.02em}
+  .brandmark .url{font-size:11.5px;color:var(--subtle);letter-spacing:.01em}
+  .btn-ghost{font-size:13px;font-weight:600;color:#fff;background:var(--hi);border:1px solid var(--hi);padding:9px 16px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .2s var(--ease);box-shadow:0 2px 8px -2px rgba(19,51,42,.45)}
+  .btn-ghost:hover{background:var(--hi-2)}
+  .btn-ghost:disabled{opacity:.6;cursor:default}
+  .shell{display:grid;grid-template-columns:280px 1fr;width:100%;align-items:start}
+  aside{position:sticky;top:65px;align-self:start;height:calc(100vh - 65px);overflow-y:auto;padding:24px 22px;border-right:1px solid var(--line);background:var(--surface);position:relative}
+  aside .botanical{bottom:8px;left:-20px;width:160px;height:160px;opacity:.045}
+  aside h3{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--subtle);font-weight:700;margin-bottom:16px}
+  .fgroup{margin-bottom:24px;position:relative;z-index:2}
+  .fgroup > label{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:9px}
+  .fgroup > label .mini{font-size:11px;font-weight:600;color:var(--leaf);cursor:pointer;background:none;border:none;padding:0}
+  .fgroup > label .mini:hover{text-decoration:underline}
+  .clusterhead{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--subtle);font-weight:700;margin:12px 0 6px}
+  .clusterhead:first-child{margin-top:0}
+  .brandlist{display:flex;flex-direction:column;gap:5px}
+  .pill{font-size:13px;font-weight:600;padding:7px 9px;border-radius:10px;cursor:pointer;user-select:none;border:1px solid transparent;background:transparent;color:var(--muted);display:flex;align-items:center;gap:10px;transition:all .2s var(--ease)}
+  .pill:hover{background:#EEF2EC}
+  .pill.on{color:#fff;background:var(--hi);border-color:var(--hi);font-weight:700;box-shadow:0 2px 8px -3px rgba(19,51,42,.5)}
+  .pill .chk{margin-left:auto;font-size:12px;opacity:0;transition:opacity .15s var(--ease)}
+  .pill.on .chk{opacity:1}
+  .badge{width:22px;height:22px;border-radius:7px;flex:none;display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff;letter-spacing:-.02em}
+  .pill.all .badge{background:linear-gradient(135deg,var(--leaf),var(--hi))}
+  /* scrollable pill strips replacing native <select> dropdowns */
+  .pillstrip{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-size:12px;font-weight:600;padding:6px 11px;border-radius:999px;cursor:pointer;user-select:none;border:1px solid var(--line);background:#EEF2EC;color:var(--muted);transition:all .2s var(--ease)}
+  .chip:hover{border-color:#C7D2C5;color:var(--ink)}
+  .chip.on{background:var(--hi);color:#fff;border-color:var(--hi);box-shadow:0 2px 6px -2px rgba(19,51,42,.4)}
+  .seg{display:flex;background:#EEF2EC;border-radius:10px;padding:3px;gap:3px;border:1px solid var(--line)}
+  .seg button{flex:1;border:none;background:none;font-size:12.5px;font-weight:600;color:var(--muted);padding:8px 4px;border-radius:7px;cursor:pointer;transition:all .2s var(--ease)}
+  .seg button:hover{color:var(--ink)}
+  .seg button.on{background:var(--hi);color:#fff;box-shadow:0 2px 6px -2px rgba(19,51,42,.4)}
+  .matchline{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px;position:relative;z-index:2}
+  .matchline b{color:var(--ink);font-weight:700}
+  main{padding:32px 40px;min-width:0;width:100%}
+  .ctxbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+  .titlecard{display:flex;align-items:center;gap:14px}
+  .titlecard .badge-lg{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;font-size:20px;font-weight:800;color:#fff;box-shadow:var(--shadow-lg)}
+  .ctx-left .h{font-size:23px;font-weight:800;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+  .ctx-left .s{font-size:13px;color:var(--muted);margin-top:2px}
+  .btn-back{font-size:13px;font-weight:600;color:#fff;background:var(--hi);border:none;padding:9px 15px;border-radius:10px;cursor:pointer;display:none;align-items:center;gap:7px;transition:all .2s var(--ease);box-shadow:0 2px 8px -2px rgba(19,51,42,.45)}
+  .btn-back:hover{background:var(--hi-2)}
+  .btn-back.show{display:flex}
+  .horizon{display:flex;align-items:center;gap:14px;margin-bottom:24px}
+  .horizon .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;color:var(--subtle)}
+  .horizon .seg{width:330px;flex:none}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px}
+  .kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:17px 19px;box-shadow:var(--shadow);transition:all .2s var(--ease);position:relative;overflow:hidden}
+  .kpi:hover{box-shadow:var(--shadow-lg);transform:translateY(-1px)}
+  .kpi .l{font-size:12px;color:var(--muted);font-weight:500}
+  .kpi .v{font-size:29px;font-weight:800;letter-spacing:-.02em;margin-top:6px}
+  .kpi .v.neg{color:var(--neg)}.kpi .v.pos{color:var(--pos)}.kpi .v.accent{color:var(--leaf)}
+  section{margin-bottom:28px}
+  .sec-h{font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;color:var(--leaf);margin-bottom:3px}
+  .sec-t{font-size:16px;font-weight:700;letter-spacing:-.01em;margin-bottom:2px}
+  .sec-sub{font-size:12.5px;color:var(--subtle);margin-bottom:14px}
+  .insight{border-radius:12px;padding:13px 16px;margin-bottom:9px;font-size:13.5px;display:flex;gap:11px;align-items:flex-start;border:1px solid}
+  .insight.neg{background:var(--neg-soft);border-color:#FECACA}
+  .insight.pos{background:var(--pos-soft);border-color:#A7F3D0}
+  .insight.flat{background:#EEF2EC;border-color:var(--line);color:var(--muted)}
+  .insight .ic{font-size:15px;line-height:1.3}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media (max-width:1100px){.grid-2{grid-template-columns:1fr}.absa{grid-template-columns:repeat(2,1fr)!important}}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .panel .botanical{bottom:-30px;right:-30px;width:130px;height:130px;opacity:.04}
+  .panel-h{font-size:14px;font-weight:700;letter-spacing:-.01em;margin-bottom:2px;position:relative;z-index:2}
+  .panel-s{font-size:12px;color:var(--subtle);margin-bottom:16px;position:relative;z-index:2}
+  .pie-wrap{display:flex;align-items:center;gap:20px;position:relative;z-index:2}
+  .pie-legend{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0}
+  .pie-legend .row{display:flex;align-items:center;gap:9px;font-size:12.5px;transition:opacity .2s var(--ease)}
+  .pie-legend .row .sw{width:10px;height:10px;border-radius:3px;flex:none}
+  .pie-legend .row .nm{font-weight:600;color:var(--ink)}
+  .pie-legend .row .pct{margin-left:auto;color:var(--muted);font-weight:700}
+  .pie-legend .row.dim{opacity:.3}
+  .set-h{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--leaf);font-weight:700;margin:4px 0 10px}
+  .set-h:not(:first-child){margin-top:22px;padding-top:18px;border-top:1px solid var(--line-soft)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;position:relative;z-index:2}
+  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--subtle);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--line)}
+  td{padding:10px;border-bottom:1px solid var(--line-soft)}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover td{background:#F6F8F4}
+  td.r,th.r{text-align:right}
+  .bname{display:flex;align-items:center;gap:9px;font-weight:600}
+  .badge-sm{width:18px;height:18px;border-radius:5px;flex:none;display:grid;place-items:center;font-size:9px;font-weight:800;color:#fff}
+  .sw{width:9px;height:9px;border-radius:3px;display:inline-block}
+  .v-pos{color:var(--pos);font-weight:700}.v-neg{color:var(--neg);font-weight:700}.v-neu{color:var(--warn);font-weight:700}
+  .hbar{height:6px;border-radius:99px;background:linear-gradient(90deg,#FCA5A5,#FCD34D 50%,#6EE7B7);position:relative;min-width:80px}
+  .hbar .pin{position:absolute;top:50%;width:13px;height:13px;border-radius:50%;background:#fff;border:2.5px solid var(--ink);transform:translate(-50%,-50%)}
+  .legend{display:flex;flex-wrap:wrap;gap:9px 16px;margin-top:14px;position:relative;z-index:2}
+  .legend i{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);font-style:normal;font-weight:500}
+  .legend i b{width:16px;height:3px;border-radius:2px;display:inline-block}
+  .barrow{display:grid;grid-template-columns:170px 1fr 46px;gap:13px;align-items:center;margin-bottom:10px;font-size:13px;position:relative;z-index:2}
+  .barrow:last-child{margin-bottom:0}
+  .bartrack{height:18px;background:#EEF2EC;border-radius:6px;overflow:hidden}
+  .barfill{height:100%;background:linear-gradient(90deg,var(--leaf),var(--hi-2));border-radius:6px;transition:width .45s var(--ease)}
+  .absa{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .ac{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:var(--shadow);transition:all .2s var(--ease)}
+  .ac:hover{box-shadow:var(--shadow-lg);transform:translateY(-1px)}
+  .ac .l{font-size:11.5px;color:var(--muted);font-weight:500}.ac .v{font-size:24px;font-weight:800;color:var(--leaf);margin-top:4px}
+  .cmplt{border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:9px;background:var(--surface);box-shadow:var(--shadow);transition:all .2s var(--ease)}
+  .cmplt:hover{box-shadow:var(--shadow-lg)}
+  .cmplt .meta{display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:6px}
+  .cmplt .who{font-weight:600}.cmplt .who .src{color:var(--subtle);font-weight:400}
+  .cmplt .th{color:var(--leaf);font-weight:600}.cmplt .txt{font-size:13.5px;color:var(--ink)}
+  .empty{text-align:center;color:var(--subtle);font-size:13px;padding:30px;background:var(--surface);border:1px dashed var(--line);border-radius:12px}
+  @media (max-width:860px){.shell{grid-template-columns:1fr}aside{position:static;height:auto;border-right:none;border-bottom:1px solid var(--line)}.kpis{grid-template-columns:repeat(2,1fr)}.topbar,main{padding-left:18px;padding-right:18px}.horizon{flex-wrap:wrap}.horizon .seg{width:100%}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><g id="leafmotif">
+  <path d="M70 130 C70 80 90 40 140 20 C120 60 110 100 70 130 Z" fill="currentColor"/>
+  <path d="M70 130 C72 95 80 70 100 52" stroke="currentColor" stroke-width="3" fill="none"/>
+  <path d="M40 135 C45 105 35 80 12 66 C30 60 60 78 56 118 Z" fill="currentColor"/>
+</g></defs></svg>
+
+<header>
+  <svg class="botanical" viewBox="0 0 160 160" aria-hidden="true"><use href="#leafmotif"/></svg>
+  <div class="topbar">
+    <div class="brandmark">
+      <span class="logo"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="3" y="14" width="3.4" height="7" rx="1.2" fill="#7FE3B2"/>
+        <rect x="8.3" y="10" width="3.4" height="11" rx="1.2" fill="#4FCF94"/>
+        <rect x="13.6" y="6" width="3.4" height="15" rx="1.2" fill="#fff"/>
+        <path d="M18.4 7.5c1.8-1.2 3.4-1.1 4.6-.6-.2 1.8-1 3.2-2.6 3.7-1.2.4-2.2 0-2.7-.6-.4-.6-.4-1.7.7-2.5z" fill="#7FE3B2"/>
+      </svg></span>
+      <div><b>Brand Health Tracker</b><div class="url">voice-of-customer intelligence</div></div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-ghost" id="refreshBtn" title="Reload the latest exported data">&#8635; Refresh</button>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+  <aside>
+    <svg class="botanical" viewBox="0 0 160 160" aria-hidden="true"><use href="#leafmotif"/></svg>
+    <h3>Filters</h3>
+    <div class="fgroup">
+      <label>Platform focus <button class="mini" id="selAll">Select all</button></label>
+      <div class="brandlist" id="platformList"></div>
+    </div>
+    <div class="fgroup"><label>Complaint theme</label><div class="pillstrip" id="themeStrip"></div></div>
+    <div class="fgroup"><label id="rangeLabel">Timeframe</label><div class="pillstrip" id="periodStrip"></div></div>
+    <div class="matchline" id="matchLine"></div>
+  </aside>
+
+  <main>
+    <div class="ctxbar">
+      <div class="titlecard">
+        <div class="badge-lg" id="titleBadge" style="display:none"></div>
+        <div class="ctx-left"><div class="h" id="ctxTitle">Customer health overview</div><div class="s" id="ctxSub">Comparing every platform across both competitive sets.</div></div>
+      </div>
+      <button class="btn-back" id="viewAllBtn">&#8634; Select all platforms</button>
+    </div>
+
+    <div class="horizon">
+      <span class="lbl">Report horizon</span>
+      <div class="seg" id="horizonSeg">
+        <button data-h="weekly" class="on">Weekly report</button>
+        <button data-h="monthly">Monthly report</button>
+        <button data-h="yearly">Yearly report</button>
+      </div>
+    </div>
+
+    <div class="kpis" id="kpis"></div>
+    <section><div class="sec-h">Diagnosis</div><div class="sec-t">Why it's moving</div><div class="sec-sub">Period-over-period sentiment change and the theme driving it.</div><div id="insights"></div></section>
+    <section><div class="sec-h">Share of voice</div><div class="sec-t">Where the complaints concentrate</div><div class="sec-sub">Each platform's share of complaints within its competitive cluster &mdash; normalized, so switching horizon never spikes the totals.</div>
+      <div class="grid-2">
+        <div class="panel"><svg class="botanical" viewBox="0 0 160 160" aria-hidden="true"><use href="#leafmotif"/></svg><div class="panel-h">Food &amp; quick commerce</div><div class="panel-s">Complaint share of voice</div><div class="pie-wrap"><svg id="pieFood" viewBox="0 0 180 180" width="160" height="160" role="img" aria-label="Food cluster complaint share of voice"></svg><div class="pie-legend" id="legendFood"></div></div></div>
+        <div class="panel"><svg class="botanical" viewBox="0 0 160 160" aria-hidden="true"><use href="#leafmotif"/></svg><div class="panel-h">E-commerce</div><div class="panel-s">Complaint share of voice</div><div class="pie-wrap"><svg id="pieEcom" viewBox="0 0 180 180" width="160" height="160" role="img" aria-label="E-commerce cluster complaint share of voice"></svg><div class="pie-legend" id="legendEcom"></div></div></div>
+      </div>
+    </section>
+    <section><div class="sec-h">Benchmark</div><div class="sec-t">Competitive standing</div><div class="sec-sub">Ranked within each set &mdash; food/quick-commerce and e-commerce aren't comparable head-to-head.</div><div class="panel" id="bench"></div></section>
+    <section><div class="sec-h">Trend</div><div class="sec-t">Sentiment over time</div><div class="sec-sub">Net sentiment per platform (&minus;1 to +1). Select multiple platforms to overlay them. Red rings mark MAD-flagged spikes.</div><div class="panel"><svg class="botanical" viewBox="0 0 160 160" aria-hidden="true"><use href="#leafmotif"/></svg><svg id="trend" viewBox="0 0 720 340" width="100%" style="height:auto;display:block;position:relative;z-index:2" role="img" aria-label="Sentiment trend"></svg><div class="legend" id="legend"></div></div></section>
+    <section><div class="sec-h">Themes</div><div class="sec-t">Top sore points</div><div class="sec-sub">Complaints by theme, for the current filter.</div><div class="panel" id="themes"></div></section>
+    <section><div class="sec-h">LLM aspects</div><div class="sec-t">What the LLM caught</div><div class="sec-sub">Categories keyword matching can't detect &mdash; UI bugs and feature requests.</div><div class="absa" id="absa"></div></section>
+    <section><div class="sec-h">Evidence</div><div class="sec-t">Read the actual complaints</div><div class="sec-sub">The real text behind the charts &mdash; responds to your filters.</div><div id="complaints"></div></section>
+  </main>
+</div>
+
+<script>
+/* ===== palette + lettermark helpers (UNCHANGED hex badges) ===== */
+const KNOWN={Swiggy:"#F97316",Zomato:"#E11D48",Blinkit:"#CA8A04",Zepto:"#7C3AED",Amazon:"#F59E0B",Flipkart:"#2874F0",Meesho:"#EC4899"};
+const FALLBACK=["#2F8F66","#DC2626","#2874F0","#B45309","#7C3AED","#EC4899","#0EA5E9","#84CC16","#F97316","#14B8A6"];
+const colorFor=(b,i)=>KNOWN[b]||FALLBACK[i%FALLBACK.length];
+const initial=b=>(b||"?").trim().charAt(0).toUpperCase();
+const badge=(b,cls)=>'<span class="'+(cls||'badge')+'" style="background:'+COLOR[b]+'">'+initial(b)+'</span>';
+const OTHERS="Others / Unclassified";
+
+/* ===== deterministic sample data — STORE REVIEWS ONLY (no Reddit) ===== */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function generateSample(){
+  const rng=mulberry32(42),pick=a=>a[Math.floor(rng()*a.length)];
+  const WEEKS=["W20","W21","W22","W23","W24","W25"];
+  const SETS={"Food & quick commerce":["Swiggy","Zomato","Blinkit","Zepto"],"E-commerce":["Amazon","Flipkart","Meesho"]};
+  const SETOF={};Object.entries(SETS).forEach(([s,bs])=>bs.forEach(b=>SETOF[b]=s));
+  const BIAS={Swiggy:.38,Zomato:.44,Blinkit:.52,Zepto:.61,Amazon:.41,Flipkart:.49,Meesho:.58};
+  const TT={"Delivery":["Order arrived over an hour late and stone cold.","Driver never showed but it was marked delivered.","Delivery keeps getting delayed every time."],
+   "Refunds & payments":["Refund stuck for days with no response.","Got charged twice for one order.","Payment failed but money was still deducted."],
+   "Returns & replacement":["Wrong size sent and the return pickup never came.","Tried to return, the request keeps failing.","Replacement still not processed after a week."],
+   "Counterfeit / damaged":["Product is clearly fake, nothing like the listing.","Item arrived cracked and damaged.","Looks nothing like the photos, feels counterfeit."],
+   "App & tech":["App crashes every time I reach checkout.","Can't log in after the latest update.","Cart randomly empties itself."],
+   "Pricing":["Prices jumped overnight for no reason.","Surge pricing is out of control.","Hidden charges appeared at checkout."],
+   "Customer service":["Support is useless, no reply for days.","The bot just loops, can't reach a human.","Got a rude reply from the agent."],
+   "Product/food quality":["Food was stale and barely edible.","Half the items were missing.","Quality has dropped a lot recently."],
+   "Others / Unclassified":["Honestly not sure what happened, just a bad experience.","Something felt off about the whole order.","Generally disappointed lately, hard to say why."]};
+  const THEMES=Object.keys(TT),POS=["Fast and smooth, genuinely impressed.","Great experience as always.","Quick delivery, zero issues.","Easy and reliable."];
+  const mentions=[];
+  Object.keys(SETOF).forEach(brand=>{const n=60+Math.floor(rng()*30);
+    for(let i=0;i<n;i++){const wi=Math.floor(rng()*WEEKS.length);const drift=(brand==="Zepto"||brand==="Meesho")?wi*0.03:0;
+      const isC=rng()<(BIAS[brand]+drift);let sentiment,theme=null,text;
+      if(isC){sentiment=rng()<0.78?"negative":"neutral";theme=pick(THEMES);
+        if(wi===5&&brand==="Zepto"&&rng()<0.6)theme="Refunds & payments";if(wi===5&&brand==="Meesho"&&rng()<0.6)theme="Counterfeit / damaged";
+        text=pick(TT[theme]);}else{sentiment="positive";text=pick(POS);}
+      mentions.push({brand,set:SETOF[brand],week:WEEKS[wi],source:"google_play",sentiment,theme,text,isComplaint:isC?1:0});}});
+  return {weeks:WEEKS,sets:SETS,mentions};
+}
+
+/* ===== globals + state (multi-select platforms + periods) ===== */
+let MENTIONS=[],WEEKS=[],SETS={},COLOR={},BRANDS=[];
+const state={selected:new Set(),theme:"All",horizon:"weekly",selP:new Set()};
+
+function ingest(payload){
+  WEEKS=payload.weeks.slice();SETS=payload.sets;BRANDS=Object.values(SETS).flat();
+  COLOR={};BRANDS.forEach((b,i)=>COLOR[b]=colorFor(b,i));
+  const wi=Object.fromEntries(WEEKS.map((w,i)=>[w,i]));
+  // STORE REVIEWS ONLY: drop any Reddit rows; map unclassified complaints to OTHERS
+  MENTIONS=payload.mentions.filter(m=>m.week in wi && m.source!=="reddit").map(m=>{
+    const o={...m,wkIdx:wi[m.week]};
+    if(o.isComplaint && !o.theme)o.theme=OTHERS;
+    return o;
+  });
+  state.selected=new Set(BRANDS);        // all platforms selected by default
+  state.theme="All";state.horizon="weekly";
+}
+const selectedPlatforms=()=>BRANDS.filter(b=>state.selected.has(b));
+const THEMELIST=()=>{const s=new Set(MENTIONS.filter(m=>m.theme).map(m=>m.theme));s.add(OTHERS);return [...s];};
+
+/* ===== Report Horizon period derivation (UNCHANGED) ===== */
+function isoWeekToDate(y,w){const s=new Date(Date.UTC(y,0,1+(w-1)*7));const d=s.getUTCDay();
+  if(d<=4)s.setUTCDate(s.getUTCDate()-d+1);else s.setUTCDate(s.getUTCDate()+8-d);return s;}
+function periodKeyLabel(weekLabel,horizon){
+  const m=weekLabel.match(/(\d{4})-W(\d{2})/);
+  if(horizon==="yearly")return m?[m[1],m[1]]:["ALL","All time"];
+  if(horizon==="monthly"){
+    if(m){const dt=isoWeekToDate(+m[1],+m[2]);const names=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      return [dt.getUTCFullYear()+"-"+String(dt.getUTCMonth()+1).padStart(2,"0"),names[dt.getUTCMonth()]+" '"+String(dt.getUTCFullYear()).slice(2)];}
+    const n=parseInt(weekLabel.replace(/\D/g,""))||0;const g=Math.floor(n/4);return ["M"+g,"Month "+(g+1)];
+  }
+  return [weekLabel,weekLabel];
+}
+function buildPeriods(horizon){const order=[],map={};
+  WEEKS.forEach((w,i)=>{const[key,label]=periodKeyLabel(w,horizon);if(!map[key]){map[key]={key,label,weekIdxs:[]};order.push(key);}map[key].weekIdxs.push(i);});
+  return order.map(k=>map[k]);}
+let PERIODS=[];
+const selectedPeriods=()=>PERIODS.filter((p,i)=>state.selP.has(i));
+const selWeekIdxs=()=>{const u=[];selectedPeriods().forEach(p=>p.weekIdxs.forEach(i=>u.push(i)));return u;};
+
+/* ===== aggregation cache brandWeekCache[platform][wkIdx] with sparsity guards ===== */
+function buildCache(){
+  const sel=new Set(selWeekIdxs());
+  const cache={};BRANDS.forEach(b=>cache[b]={});
+  const baseRows=[];
+  for(const m of MENTIONS){
+    if(!sel.has(m.wkIdx))continue;
+    if(state.theme!=="All"&&m.theme!==state.theme)continue;
+    baseRows.push(m);
+    const bw=cache[m.brand]||(cache[m.brand]={});
+    const c=bw[m.wkIdx]||(bw[m.wkIdx]={total:0,comp:0,pos:0,neg:0,themes:{}});
+    c.total++;if(m.isComplaint)c.comp++;
+    if(m.sentiment==="positive")c.pos++;else if(m.sentiment==="negative")c.neg++;
+    if(m.theme)c.themes[m.theme]=(c.themes[m.theme]||0)+1;
+  }
+  return {cache,baseRows};
+}
+/* sparsity-safe aggregate: always returns a fully-formed object, never NaN/undefined */
+function aggCells(cache,brand,weekIdxs){const a={total:0,comp:0,pos:0,neg:0,themes:{}};
+  const bw=cache[brand];if(!bw||!weekIdxs||!weekIdxs.length)return a;
+  for(const i of weekIdxs){const c=bw[i];if(!c)continue;a.total+=c.total;a.comp+=c.comp;a.pos+=c.pos;a.neg+=c.neg;
+    for(const t in c.themes)a.themes[t]=(a.themes[t]||0)+c.themes[t];}
+  return a;}
+const netOf=a=>(a&&a.total)?(a.pos-a.neg)/a.total:0;       // guarded: 0 when empty
+
+/* ===== Share of Voice: a platform's % of complaint volume within its cluster ===== */
+function clusterOf(brand){for(const[s,bs]of Object.entries(SETS))if(bs.includes(brand))return s;return"";}
+function sovWithinCluster(cache,brand,weekIdxs){
+  const cluster=clusterOf(brand);const peers=SETS[cluster]||[brand];
+  let clusterComp=0;peers.forEach(p=>clusterComp+=aggCells(cache,p,weekIdxs).comp);
+  const mine=aggCells(cache,brand,weekIdxs).comp;
+  return clusterComp>0?(mine/clusterComp*100):0;            // guarded against /0
+}
+
+/* ===== robust anomaly detection — Median Absolute Deviation (modified z-score).
+   Resistant to organic spikes; needs >=4 periods (sparsity guard). ===== */
+function median(arr){const a=[...arr].sort((x,y)=>x-y);const n=a.length;if(!n)return 0;const m=n>>1;return n%2?a[m]:(a[m-1]+a[m])/2;}
+function madAnomalies(cache,periods){
+  const out=[];const themes=THEMELIST();
+  for(const b of selectedPlatforms()){for(const th of themes){
+    const counts=periods.map(p=>aggCells(cache,b,p.weekIdxs).themes[th]||0);
+    if(counts.length<4)continue;                              // not enough history → skip, don't false-alarm
+    const med=median(counts);const mad=median(counts.map(c=>Math.abs(c-med)));
+    const last=counts[counts.length-1];
+    const mz= mad>0 ? 0.6745*(last-med)/mad : (last>med? Infinity : 0);  // guard mad=0
+    if(last>=4 && mz>3.5)out.push({platform:b,theme:th,period:periods[periods.length-1].label,count:last,baseline:+med.toFixed(1)});
+  }}return out;
+}
+function rootCause(brand,cache,periods){
+  if(periods.length<2)return null;
+  const lastP=periods[periods.length-1],prevP=periods[periods.length-2];
+  const delta=+(netOf(aggCells(cache,brand,lastP.weekIdxs))-netOf(aggCells(cache,brand,prevP.weekIdxs))).toFixed(2);
+  let top=null,best=0;const la=aggCells(cache,brand,lastP.weekIdxs).themes,pa=aggCells(cache,brand,prevP.weekIdxs).themes;
+  for(const t of THEMELIST()){const d=(la[t]||0)-(pa[t]||0);if(d>best){best=d;top=t;}}
+  return{brand,delta,period:lastP.label,top,inc:best};
+}
+
+/* ===== procedural donut (role=img + aria) ===== */
+function donut(svgId,legendId,brands,counts){
+  const total=counts.reduce((a,b)=>a+b,0);const svg=document.getElementById(svgId),leg=document.getElementById(legendId);
+  if(!total){svg.setAttribute("aria-label","No complaint data in current filter");svg.innerHTML='<circle cx="90" cy="90" r="66" fill="none" stroke="#E3E9E0" stroke-width="24"/><text x="90" y="95" text-anchor="middle" fill="#9AA89F" font-size="12">no data</text>';leg.innerHTML='';return;}
+  const cx=90,cy=90,r=66,sw=24;let a0=-Math.PI/2,s="",desc=[];
+  brands.forEach((b,i)=>{const frac=counts[i]/total;if(frac<=0)return;const a1=a0+frac*2*Math.PI;
+    const x0=cx+r*Math.cos(a0),y0=cy+r*Math.sin(a0),x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1);const large=frac>0.5?1:0;
+    const dim=state.selected.has(b)?1:0.28;
+    s+='<path d="M '+x0+' '+y0+' A '+r+' '+r+' 0 '+large+' 1 '+x1+' '+y1+'" fill="none" stroke="'+COLOR[b]+'" stroke-width="'+sw+'" opacity="'+dim+'"><title>'+b+': '+counts[i]+' ('+Math.round(frac*100)+'%)</title></path>';
+    desc.push(b+" "+Math.round(frac*100)+"%");a0=a1;});
+  s+='<text x="90" y="86" text-anchor="middle" fill="#10241C" font-size="22" font-weight="800">'+total+'</text><text x="90" y="104" text-anchor="middle" fill="#5C6F65" font-size="10" letter-spacing="0.05em">COMPLAINTS</text>';
+  svg.setAttribute("aria-label","Share of voice: "+desc.join(", "));svg.innerHTML=s;
+  leg.innerHTML=brands.map((b,i)=>{const pct=Math.round(counts[i]/total*100);const dim=state.selected.has(b)?'':' dim';
+    return '<div class="row'+dim+'"><span class="sw" style="background:'+COLOR[b]+'"></span><span class="nm">'+b+'</span><span class="pct num">'+pct+'%</span></div>';}).join("");
+}
+
+/* ===== MAIN RENDER ===== */
+function render(){
+  const {cache,baseRows}=buildCache();
+  const periods=selectedPeriods();
+  const sel=selectedPlatforms(),selSet=new Set(sel);
+  const anoms=madAnomalies(cache,periods);
+  const selWeeks=selWeekIdxs();
+  const all=sel.length===BRANDS.length;
+
+  // title card
+  const tb=document.getElementById("titleBadge");
+  if(sel.length===1){const b=sel[0];tb.style.display="grid";tb.style.background=COLOR[b];tb.textContent=initial(b);
+    document.getElementById("ctxTitle").textContent="Deep dive · "+b;
+    document.getElementById("ctxSub").textContent="Isolated telemetry for "+b+" \u2014 "+clusterOf(b)+".";}
+  else{tb.style.display="none";
+    document.getElementById("ctxTitle").textContent=all?"Customer health overview":(sel.length+" platforms compared");
+    document.getElementById("ctxSub").textContent=all?"Comparing every platform across both competitive sets.":("Overlaying: "+sel.join(", ")+".");}
+  document.getElementById("viewAllBtn").classList.toggle("show",!all);
+
+  const activeRows=baseRows.filter(r=>selSet.has(r.brand));
+  document.getElementById("matchLine").innerHTML="<b>"+activeRows.length.toLocaleString()+"</b> store reviews match these filters.";
+
+  // KPIs — Share of Voice replaces raw mention count
+  let agg={total:0,comp:0,pos:0,neg:0};
+  sel.forEach(b=>{const a=aggCells(cache,b,selWeeks);agg.total+=a.total;agg.comp+=a.comp;agg.pos+=a.pos;agg.neg+=a.neg;});
+  let totalComp=0;BRANDS.forEach(b=>totalComp+=aggCells(cache,b,selWeeks).comp);
+  const sov= totalComp>0 ? Math.round(agg.comp/totalComp*100) : 0;
+  const rate=agg.total?Math.round(agg.comp/agg.total*100):0;
+  const netv=netOf(agg);
+  document.getElementById("kpis").innerHTML=
+    '<div class="kpi"><div class="l">Share of voice</div><div class="v accent num">'+sov+'%</div></div>'+
+    '<div class="kpi"><div class="l">Complaint rate</div><div class="v neg num">'+rate+'%</div></div>'+
+    '<div class="kpi"><div class="l">'+(sel.length===1?'Net sentiment':'Platforms active')+'</div><div class="v '+(sel.length===1?(netv>=0?'pos':'neg'):'accent')+' num">'+(sel.length===1?(netv>=0?'+':'')+netv.toFixed(2):sel.length)+'</div></div>'+
+    '<div class="kpi"><div class="l">MAD alerts</div><div class="v '+(anoms.length?'neg':'')+' num">'+anoms.length+'</div></div>';
+
+  // Why it's moving
+  const causes=sel.map(b=>rootCause(b,cache,periods)).filter(Boolean);
+  const drops=causes.filter(c=>c.delta<0).sort((a,b)=>a.delta-b.delta).slice(0,3);
+  const ups=causes.filter(c=>c.delta>=0).slice(0,2);let ih="";
+  drops.forEach(c=>ih+='<div class="insight neg"><span class="ic">\uD83D\uDCC9</span><span><b>'+c.brand+'</b> net sentiment fell '+Math.abs(c.delta).toFixed(2)+' in '+c.period+(c.top?(", led by a rise in '"+c.top+"' complaints (+"+c.inc+")."):'.')+'</span></div>');
+  ups.forEach(c=>ih+='<div class="insight pos"><span class="ic">\uD83D\uDCC8</span><span><b>'+c.brand+'</b> held steady or rose in '+c.period+'.</span></div>');
+  if(!ih)ih='<div class="insight flat"><span class="ic">\u2139\uFE0F</span><span>Not enough '+state.horizon+' history in this filter to attribute sentiment moves.</span></div>';
+  document.getElementById("insights").innerHTML=ih;
+
+  // Cluster SoV pies (always full cluster; dim non-selected)
+  Object.entries(SETS).forEach(([setName,brands])=>{
+    const counts=brands.map(b=>aggCells(cache,b,selWeeks).comp);
+    if(setName==="E-commerce")donut("pieEcom","legendEcom",brands,counts);else donut("pieFood","legendFood",brands,counts);
+  });
+
+  // Benchmark with SoV column (within cluster)
+  let bh="";
+  Object.entries(SETS).forEach(([setName,brands])=>{
+    const inSet=brands.filter(b=>selSet.has(b));if(!inSet.length)return;
+    const ranked=inSet.map(b=>{const a=aggCells(cache,b,selWeeks);const worst=Object.entries(a.themes).sort((x,y)=>y[1]-x[1])[0];
+      return{b,net:netOf(a),sov:Math.round(sovWithinCluster(cache,b,selWeeks)),rate:a.total?Math.round(a.comp/a.total*100):0,total:a.total,worst:worst?worst[0]:"\u2014"};}).sort((a,b)=>b.net-a.net);
+    bh+='<div class="set-h">'+setName+'</div><table><thead><tr><th>Platform</th><th class="r">Reviews</th><th class="r">SoV</th><th class="r">Net</th><th style="width:110px">Health</th><th class="r">Complaints</th><th>Worst theme</th></tr></thead><tbody>';
+    ranked.forEach(x=>{const cls=x.net>=0.05?'v-pos':x.net<=-0.05?'v-neg':'v-neu';const pos=((x.net+1)/2*100).toFixed(0);
+      bh+='<tr><td><span class="bname">'+badge(x.b,'badge-sm')+x.b+'</span></td><td class="r num">'+x.total+'</td><td class="r num">'+x.sov+'%</td><td class="r '+cls+' num">'+(x.net>=0?'+':'')+x.net.toFixed(2)+'</td><td><div class="hbar"><span class="pin" style="left:'+pos+'%"></span></div></td><td class="r num">'+x.rate+'%</td><td>'+x.worst+'</td></tr>';});
+    bh+='</tbody></table>';
+  });
+  document.getElementById("bench").innerHTML=bh||'<div class="empty">Select at least one platform to compare.</div>';
+
+  renderTrend(cache,periods,anoms,sel);
+
+  // Themes
+  const tcounts={};sel.forEach(b=>{const a=aggCells(cache,b,selWeeks);for(const t in a.themes)tcounts[t]=(tcounts[t]||0)+a.themes[t];});
+  const arr=Object.entries(tcounts).sort((a,b)=>b[1]-a[1]);
+  document.getElementById("themes").innerHTML=arr.length?(function(){const mx=arr[0][1];return arr.map(function(e){return '<div class="barrow"><span>'+e[0]+'</span><div class="bartrack"><div class="barfill" style="width:'+(e[1]/mx*100).toFixed(0)+'%"></div></div><span class="r num" style="text-align:right;font-weight:700">'+e[1]+'</span></div>';}).join("");})():'<div class="empty">No themed complaints in this filter.</div>';
+
+  // ABSA
+  const ui={},fr={};activeRows.forEach((r,i)=>{if(r.theme==="App & tech")ui[r.brand]=(ui[r.brand]||0)+1;if(r.sentiment!=="negative"&&i%7===0)fr[r.brand]=(fr[r.brand]||0)+1;});
+  const top=o=>Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,2);
+  const cards=[].concat(top(ui).map(e=>["UI bug",e[0],e[1]]),top(fr).map(e=>["Feature request",e[0],e[1]])).slice(0,4);
+  document.getElementById("absa").innerHTML=cards.length?cards.map(c=>'<div class="ac"><div class="l">'+c[0]+' \u00B7 '+c[1]+'</div><div class="v num">'+c[2]+'</div></div>').join(""):'<div class="empty" style="grid-column:1/-1">No LLM aspects in this filter.</div>';
+
+  // Evidence
+  const list=activeRows.filter(r=>r.isComplaint).sort((a,b)=>b.wkIdx-a.wkIdx).slice(0,8);
+  document.getElementById("complaints").innerHTML=list.length?list.map(m=>'<div class="cmplt"><div class="meta"><span class="who">'+m.brand+' <span class="src">\u00B7 store review \u00B7 '+m.week+'</span></span><span class="th">'+(m.theme||OTHERS)+'</span></div><div class="txt">"'+m.text+'"</div></div>').join(""):'<div class="empty">No matching complaints \u2014 widen the filters.</div>';
+}
+
+function renderTrend(cache,periods,anoms,sel){
+  const W=720,H=340,L=46,R=22,T=20,B=38;
+  if(!periods.length||!sel.length){document.getElementById("trend").innerHTML='';document.getElementById("legend").innerHTML='';return;}
+  const series={};sel.forEach(b=>series[b]=periods.map(p=>netOf(aggCells(cache,b,p.weekIdxs))));
+  let allV=[];sel.forEach(b=>allV=allV.concat(series[b]));
+  let lo=Math.min(-0.05,...allV),hi=Math.max(0.05,...allV);const pad=((hi-lo)||0.2)*0.18;lo=Math.max(-1,lo-pad);hi=Math.min(1,hi+pad);
+  const xs=periods.length>1?(W-L-R)/(periods.length-1):0;const x=k=>L+k*xs,y=v=>T+(hi-v)/(hi-lo)*(H-T-B);let s="";
+  for(let i=0;i<=4;i++){const g=lo+(hi-lo)*i/4;const zero=Math.abs(g)<1e-9;s+='<line x1="'+L+'" y1="'+y(g)+'" x2="'+(W-R)+'" y2="'+y(g)+'" stroke="'+(zero?'#9AA89F':'#EEF2EC')+'" stroke-width="'+(zero?1.4:1)+'" '+(zero?'':'stroke-dasharray="2 6"')+'/>';s+='<text x="'+(L-8)+'" y="'+(y(g)+5)+'" fill="#5C6F65" font-size="15" text-anchor="end">'+(g>0?'+':'')+g.toFixed(1)+'</text>';}
+  periods.forEach((p,k)=>s+='<text x="'+x(k)+'" y="'+(H-10)+'" fill="#5C6F65" font-size="14" text-anchor="middle">'+p.label+'</text>');
+  sel.forEach(b=>{const pts=series[b].map((v,k)=>x(k)+','+y(v)).join(" ");s+='<polyline points="'+pts+'" fill="none" stroke="'+COLOR[b]+'" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>';const li=series[b].length-1;if(li>=0)s+='<circle cx="'+x(li)+'" cy="'+y(series[b][li])+'" r="4.5" fill="'+COLOR[b]+'"/>';});
+  anoms.forEach(a=>{const k=periods.length-1;if(!series[a.platform])return;const v=series[a.platform][series[a.platform].length-1];s+='<circle cx="'+x(k)+'" cy="'+y(v)+'" r="10" fill="none" stroke="#DC2626" stroke-width="3"><title>'+a.platform+': '+a.theme+' spike ('+a.count+' vs ~'+a.baseline+')</title></circle>';});
+  const svg=document.getElementById("trend");
+  svg.setAttribute("aria-label",state.horizon+" net sentiment trend for "+sel.join(", ")+" across "+periods.length+" periods");
+  svg.innerHTML=s;
+  document.getElementById("legend").innerHTML=sel.map(b=>'<i><b style="background:'+COLOR[b]+'"></b>'+b+'</i>').join("");
+}
+
+/* ===== controls bound ONCE via delegation ===== */
+function bindControls(){
+  document.getElementById("platformList").addEventListener("click",e=>{const pill=e.target.closest(".pill");if(!pill)return;
+    const b=pill.dataset.b;
+    if(b==="__all__"){state.selected=new Set(BRANDS);}
+    else{if(state.selected.has(b))state.selected.delete(b);else state.selected.add(b);if(state.selected.size===0)state.selected=new Set(BRANDS);}
+    populateControls();render();});
+  document.getElementById("selAll").addEventListener("click",()=>{state.selected=new Set(BRANDS);populateControls();render();});
+  document.getElementById("viewAllBtn").addEventListener("click",()=>{state.selected=new Set(BRANDS);populateControls();render();});
+  document.getElementById("themeStrip").addEventListener("click",e=>{const c=e.target.closest(".chip");if(!c)return;state.theme=c.dataset.t;populateControls();render();});
+  document.getElementById("periodStrip").addEventListener("click",e=>{const c=e.target.closest(".chip");if(!c)return;
+    const i=+c.dataset.i;if(state.selP.has(i))state.selP.delete(i);else state.selP.add(i);
+    if(state.selP.size===0)PERIODS.forEach((p,k)=>state.selP.add(k));   // never empty
+    populateControls();render();});
+  document.getElementById("horizonSeg").addEventListener("click",e=>{const btn=e.target.closest("button");if(!btn)return;
+    state.horizon=btn.dataset.h;PERIODS=buildPeriods(state.horizon);state.selP=new Set(PERIODS.map((p,i)=>i));
+    populateControls();render();});
+  document.getElementById("refreshBtn").addEventListener("click",async()=>{const btn=document.getElementById("refreshBtn");const old=btn.textContent;btn.textContent="\u21BB Refreshing\u2026";btn.disabled=true;try{await boot();}finally{btn.textContent=old;btn.disabled=false;}});
+}
+
+function populateControls(){
+  // platform multi-select checklist, grouped by cluster, with colored badges
+  const pl=document.getElementById("platformList");const all=state.selected.size===BRANDS.length;
+  let html='<span class="pill all '+(all?'on':'')+'" data-b="__all__"><span class="badge">A</span>All platforms<span class="chk">\u2713</span></span>';
+  Object.entries(SETS).forEach(([setName,brands])=>{
+    html+='<div class="clusterhead">'+setName+'</div>';
+    html+=brands.map(b=>'<span class="pill '+(state.selected.has(b)?'on':'')+'" data-b="'+b+'">'+badge(b)+b+'<span class="chk">\u2713</span></span>').join("");
+  });
+  pl.innerHTML=html;
+  // theme pills (single-select) incl Others / Unclassified
+  document.getElementById("themeStrip").innerHTML=["All"].concat(THEMELIST()).map(t=>'<span class="chip '+(t===state.theme?'on':'')+'" data-t="'+t+'">'+t+'</span>').join("");
+  // timeframe period pills (multi-select)
+  document.getElementById("rangeLabel").textContent=state.horizon.charAt(0).toUpperCase()+state.horizon.slice(1)+" timeframe";
+  document.getElementById("periodStrip").innerHTML=PERIODS.map((p,i)=>'<span class="chip '+(state.selP.has(i)?'on':'')+'" data-i="'+i+'">'+p.label+'</span>').join("");
+  document.querySelectorAll("#horizonSeg button").forEach(x=>x.classList.toggle("on",x.dataset.h===state.horizon));
+}
+
+/* ===== boot ===== */
+async function boot(){
+  let payload=null;
+  try{const res=await fetch("web_data.json",{cache:"no-store"});if(res.ok){const j=await res.json();if(j&&Array.isArray(j.mentions)&&j.mentions.length&&j.weeks&&j.weeks.length){payload=j;}}}catch(e){}
+  if(!payload)payload=generateSample();
+  ingest(payload);
+  PERIODS=buildPeriods(state.horizon);state.selP=new Set(PERIODS.map((p,i)=>i));
+  populateControls();render();
+}
+bindControls();boot();
+</script>
+</body>
+</html>

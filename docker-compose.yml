@@ -1,0 +1,43 @@
+# Brand Health Tracker — local multi-container setup.
+#
+# Two services share ONE database volume so the dashboard always shows what the
+# pipeline last wrote:
+#   - dashboard : the Streamlit app, served on http://localhost:8501
+#   - pipeline  : runs the full collect->clean->score->insights pass on a daily loop
+#
+# Start everything:   docker compose up --build
+# Run the pipeline once, now:   docker compose run --rm pipeline python scripts/run_all.py
+#
+# Secrets (Reddit creds, GEMINI_API_KEY, ALERT_WEBHOOK_URL) are read from a local .env
+# file — never bake them into the image.
+
+services:
+  dashboard:
+    build: .
+    command: streamlit run dashboard/app.py --server.port=8501 --server.address=0.0.0.0
+    ports:
+      - "8501:8501"
+    volumes:
+      - brand_data:/app/data
+    env_file:
+      - .env
+    restart: unless-stopped
+
+  pipeline:
+    build: .
+    # Simple built-in scheduler: run once on start, then every 24h. (For heavier needs,
+    # the GitHub Actions workflow already schedules this in CI — see .github/workflows.)
+    command: >
+      sh -c "while true; do
+               python scripts/run_all.py;
+               python scripts/alerts.py;
+               sleep 86400;
+             done"
+    volumes:
+      - brand_data:/app/data
+    env_file:
+      - .env
+    restart: unless-stopped
+
+volumes:
+  brand_data:
